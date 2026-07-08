@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
-import { navItems } from '../../config/navigation'
+import { useState } from 'react'
 import type { View } from '../../types'
 import { AppHeader } from './AppHeader'
 import { Sidebar } from './Sidebar'
@@ -9,6 +8,7 @@ type DashboardLayoutProps = {
   activeView: View
   children: ReactNode
   onLogout: () => void
+  title: string
   onViewChange: (view: View) => void
 }
 
@@ -16,13 +16,10 @@ export function DashboardLayout({
   activeView,
   children,
   onLogout,
+  title,
   onViewChange,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const activeLabel = useMemo(
-    () => navItems.find((item) => item.id === activeView)?.label ?? 'Dashboard',
-    [activeView],
-  )
 
   const handleViewChange = (view: View) => {
     onViewChange(view)
@@ -54,7 +51,7 @@ export function DashboardLayout({
 
       <div className="lg:pl-72">
         <AppHeader
-          title={activeLabel}
+          title={title}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
         <main className="px-4 py-5 sm:px-6 lg:px-8">{children}</main>

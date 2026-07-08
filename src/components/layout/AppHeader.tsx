@@ -35,7 +35,7 @@ export function AppHeader({ title, onOpenSidebar }: AppHeaderProps) {
             />
             <input
               className="w-72 rounded-md border border-neutral-200 bg-neutral-50 py-2 pl-9 pr-3 text-sm outline-none focus:border-teal-600 focus:bg-white"
-              placeholder="Search student, class, file"
+              placeholder="Search classes, students, files"
               type="search"
             />
           </div>

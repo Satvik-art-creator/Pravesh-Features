@@ -46,7 +46,7 @@ export function Sidebar({ activeView, onChange, onLogout }: SidebarProps) {
 
       <div className="mt-auto rounded-md border border-neutral-200 bg-neutral-50 p-4">
         <p className="text-sm font-semibold text-zinc-950">Prof. Demo User</p>
-        <p className="mt-1 text-xs text-zinc-500">CSE Department</p>
+        <p className="mt-1 text-xs text-zinc-500">Classroom owner</p>
         <button
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-neutral-100"
           type="button"

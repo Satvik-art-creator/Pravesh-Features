@@ -1,10 +1,17 @@
 import { ArrowDownToLine } from 'lucide-react'
-import { markRecords } from '../data/mockData'
+import { markRecords } from '../../../data/mockData'
+import type { ClassSummary } from '../../../types'
 
-export function MarksPage() {
+type GradesTabProps = {
+  classItem: ClassSummary
+}
+
+export function GradesTab({ classItem }: GradesTabProps) {
+  const classMarks = markRecords.filter((mark) => mark.className === classItem.code)
+
   const exportCsv = () => {
     const header = ['BT ID', 'Name', 'Midterm', 'Assignment', 'Final', 'Total']
-    const rows = markRecords.map((mark) => [
+    const rows = classMarks.map((mark) => [
       mark.id,
       mark.name,
       mark.mid,
@@ -17,7 +24,7 @@ export function MarksPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'marks-export.csv'
+    link.download = `${classItem.code}-grades-export.csv`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -27,12 +34,13 @@ export function MarksPage() {
       <section className="rounded-lg border border-neutral-200 bg-white p-5">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <p className="text-sm font-medium text-teal-700">Marks manager</p>
-            <h2 className="mt-1 text-xl font-semibold text-zinc-950">
-              Enter marks and export CSV
-            </h2>
+            <p className="text-sm font-medium text-teal-700">Grades</p>
+            <h3 className="mt-1 text-xl font-semibold text-zinc-950">
+              Enter grades and export CSV
+            </h3>
             <p className="mt-2 text-sm text-zinc-500">
-              Editable form design for future backend integration.
+              Editable grade table for {classItem.title}. Backend save will come
+              later.
             </p>
           </div>
           <button
@@ -61,7 +69,7 @@ export function MarksPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
-              {markRecords.map((mark) => (
+              {classMarks.map((mark) => (
                 <tr key={mark.id}>
                   <td className="px-4 py-3 font-medium text-zinc-950">
                     {mark.id}

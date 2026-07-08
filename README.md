@@ -1,6 +1,6 @@
 # Pravesh
 
-Frontend-only prototype for a college teacher admin system.
+Frontend-only prototype for a college classroom management system.
 
 ## Scope
 
@@ -19,11 +19,14 @@ backend API integration yet.
 ## Features
 
 - Login-only landing page
-- Teacher dashboard
-- Class and student data view
-- Attendance QR flow mockup
-- File storage and assignment upload design
-- Marks table with CSV export
+- Google Classroom-style class home
+- Create class modal on the main home page
+- Opened-class workspace with teacher-view tabs
+- Stream feed with posted timestamps
+- Classwork with materials, assignments, upload timestamps, and due dates
+- People tab with teacher, students, invite UI, and class code
+- Lecture-date attendance QR flow inside each class
+- Grades table with CSV export inside each class
 - Responsive desktop sidebar and mobile drawer
 
 ## Project Structure
