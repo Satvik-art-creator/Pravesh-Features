@@ -33,10 +33,8 @@ export function ClassCard({ classItem, onOpen }: ClassCardProps) {
           <KeyRound size={16} className="text-teal-700" />
           <span>Class code: {classItem.classCode}</span>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="flex justify-center text-center">
           <Metric label="Students" value={classItem.students} />
-          <Metric label="Pending" value={classItem.students - classItem.submissions} />
-          <Metric label="Uploads" value={classItem.submissions} />
         </div>
         <p className="mt-auto pt-4 text-sm font-medium text-teal-700">
           Open classroom

@@ -14,6 +14,11 @@ connectDB();
 
 const app = express();
 
+// Trust proxy headers (X-Forwarded-For) so req.ip returns the real client IP
+// when running behind nginx, a cloud load balancer, or similar reverse proxy.
+// This is critical for the WiFi IP verification in the attendance module.
+app.set('trust proxy', true);
+
 app.use(helmet());
 
 app.use(mongoSanitize());
@@ -36,6 +41,9 @@ if (process.env.NODE_ENV === 'development') {
 
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/classroom', require('./routes/classroom.routes'));
+app.use('/api/join', require('./routes/join.routes'));
+app.use('/api/attendance', require('./routes/attendance.routes'));
 
 app.use(errorHandler);
 

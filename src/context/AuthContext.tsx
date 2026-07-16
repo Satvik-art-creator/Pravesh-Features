@@ -9,6 +9,7 @@ type Teacher = {
 type AuthContextType = {
   isAuthenticated: boolean;
   teacher: Teacher | null;
+  loading: boolean;
   login: (token: string, teacherData: Teacher) => void;
   logout: () => void;
 };
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // Check localStorage for token on app load
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     }
+    setLoading(false);
   }, []);
 
   const login = (token: string, teacherData: Teacher) => {
@@ -51,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, teacher, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, teacher, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

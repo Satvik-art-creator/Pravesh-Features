@@ -1,16 +1,24 @@
-import { Copy, MailPlus, ShieldCheck, Users } from 'lucide-react'
+import { useState } from 'react'
+import { Copy, MailPlus, ShieldCheck, Users, X, Check } from 'lucide-react'
 import { DataTable } from '../../common/DataTable'
-import { students } from '../../../data/mockData'
 import type { ClassSummary } from '../../../types'
 
 type PeopleTabProps = {
   classItem: ClassSummary
+  students: any[]
+  loading: boolean
+  onRefresh: () => void
 }
 
-export function PeopleTab({ classItem }: PeopleTabProps) {
-  const classStudents = students.filter(
-    (student) => student.className === classItem.code,
-  )
+export function PeopleTab({ classItem, students, loading, onRefresh }: PeopleTabProps) {
+  const [isInviteOpen, setIsInviteOpen] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(classItem.classCode)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
 
   return (
     <div className="space-y-5">
@@ -35,10 +43,11 @@ export function PeopleTab({ classItem }: PeopleTabProps) {
             </span>
             <button
               aria-label="Copy class code"
-              className="rounded-md border border-neutral-200 bg-white p-2 text-zinc-600 hover:bg-neutral-100"
+              className="rounded-md border border-neutral-200 bg-white p-2 text-zinc-600 hover:bg-neutral-100 transition flex items-center justify-center"
               type="button"
+              onClick={handleCopyCode}
             >
-              <Copy size={16} />
+              {codeCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
             </button>
           </div>
         </div>
@@ -53,29 +62,125 @@ export function PeopleTab({ classItem }: PeopleTabProps) {
             </h3>
           </div>
           <button
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-neutral-50"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-neutral-50 transition"
             type="button"
+            onClick={() => setIsInviteOpen(true)}
           >
             <MailPlus size={16} />
             Invite students
           </button>
         </div>
-        <div className="mb-4 flex items-center gap-2 text-sm text-zinc-500">
-          <Users size={16} />
-          {classStudents.length} students currently visible in mock data
-        </div>
-        <DataTable
-          title={`${classItem.title} people`}
-          columns={['BT ID', 'Name', 'Status', 'Attendance', 'Last login']}
-          rows={classStudents.map((student) => [
-            student.id,
-            student.name,
-            student.status,
-            student.attendance,
-            student.lastLogin,
-          ])}
-        />
+
+        {loading ? (
+          <div className="flex min-h-[200px] items-center justify-center bg-white rounded-lg border border-neutral-200">
+            <p className="text-zinc-500">Loading students...</p>
+          </div>
+        ) : students.length === 0 ? (
+          <div className="flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-neutral-200 bg-white p-8 text-center">
+            <Users className="mx-auto h-12 w-12 text-zinc-400" />
+            <h3 className="mt-2 text-sm font-semibold text-zinc-900">No students yet</h3>
+            <p className="mt-1 text-sm text-zinc-500">
+              No students have joined yet — share the invite link to get started
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 flex items-center gap-2 text-sm text-zinc-500">
+              <Users size={16} />
+              {students.length} {students.length === 1 ? 'student' : 'students'}
+            </div>
+            <DataTable
+              title={`${classItem.title} people`}
+              columns={['BT ID', 'Name', 'Status', 'Attendance', 'Last Activity']}
+              rows={students.map((student) => [
+                student.btechId,
+                student.name,
+                student.status,
+                student.attendancePercent !== null && student.attendancePercent !== undefined
+                  ? `${student.attendancePercent}%`
+                  : '—',
+                student.lastActivity !== null && student.lastActivity !== undefined
+                  ? student.lastActivity
+                  : '—',
+              ])}
+            />
+          </>
+        )}
       </section>
+
+      {isInviteOpen && (
+        <InviteStudentsDialog 
+          classCode={classItem.classCode} 
+          onClose={() => setIsInviteOpen(false)} 
+        />
+      )}
+    </div>
+  )
+}
+
+type InviteStudentsDialogProps = {
+  classCode: string
+  onClose: () => void
+}
+
+function InviteStudentsDialog({ classCode, onClose }: InviteStudentsDialogProps) {
+  const [copied, setCopied] = useState(false)
+  const joinLink = `${window.location.origin}/join/${classCode}`
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(joinLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 p-4">
+      <div className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-5 shadow-xl">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-teal-700">Classroom invite</p>
+            <h2 className="mt-1 text-2xl font-semibold text-zinc-950">
+              Invite students
+            </h2>
+          </div>
+          <button
+            aria-label="Close invite dialog"
+            className="rounded-md border border-neutral-200 p-2 text-zinc-600 hover:bg-neutral-50"
+            type="button"
+            onClick={onClose}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-600">
+            Share this link with students to let them join the classroom.
+          </p>
+          <div className="flex items-center justify-between gap-3 rounded-md bg-neutral-50 px-3 py-2 border border-neutral-200">
+            <span className="font-mono text-sm text-teal-800 break-all select-all">
+              {joinLink}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-neutral-50"
+            type="button"
+            onClick={onClose}
+          >
+            Close
+          </button>
+          <button
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 w-28"
+            type="button"
+            onClick={handleCopy}
+          >
+            {copied ? 'Copied!' : 'Copy link'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

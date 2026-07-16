@@ -83,7 +83,6 @@ export type MarkRecord = {
 
 export type CreateClassInput = {
   title: string
-  code: string
   section: string
   subject: string
   semester: string

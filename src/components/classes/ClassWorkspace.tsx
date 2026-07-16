@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ArrowLeft,
   BookOpen,
@@ -14,6 +14,8 @@ import { GradesTab } from './tabs/GradesTab'
 import { PeopleTab } from './tabs/PeopleTab'
 import { StreamTab } from './tabs/StreamTab'
 import type { ClassSummary } from '../../types'
+import { axiosInstance } from '../../api/axiosInstance'
+import { useParams, useNavigate } from 'react-router-dom'
 
 type ClassTab = 'stream' | 'classwork' | 'people' | 'grades' | 'attendance'
 
@@ -31,7 +33,33 @@ type ClassWorkspaceProps = {
 }
 
 export function ClassWorkspace({ classItem, onBack }: ClassWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<ClassTab>('stream')
+  const { tab } = useParams<{ tab: string }>()
+  const navigate = useNavigate()
+  const activeTab = (tab as ClassTab) || 'stream'
+  const [students, setStudents] = useState<any[]>([])
+  const [loadingStudents, setLoadingStudents] = useState(false)
+  const [studentsLoaded, setStudentsLoaded] = useState(false)
+
+  const fetchStudents = async () => {
+    setLoadingStudents(true)
+    try {
+      const response = await axiosInstance.get(`/classroom/${classItem.id}/students`)
+      if (response.data.success) {
+        setStudents(response.data.data)
+        setStudentsLoaded(true)
+      }
+    } catch (err) {
+      console.error('Error fetching students:', err)
+    } finally {
+      setLoadingStudents(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'people' && !studentsLoaded) {
+      fetchStudents()
+    }
+  }, [activeTab, studentsLoaded, classItem.id])
 
   return (
     <div className="space-y-5">
@@ -65,23 +93,23 @@ export function ClassWorkspace({ classItem, onBack }: ClassWorkspaceProps) {
         </div>
 
         <div className="flex gap-2 overflow-x-auto border-b border-neutral-200 px-4 py-3">
-          {classTabs.map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
+          {classTabs.map((tabItem) => {
+            const Icon = tabItem.icon
+            const isActive = activeTab === tabItem.id
 
             return (
               <button
-                key={tab.id}
+                key={tabItem.id}
                 className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium ${
                   isActive
                     ? 'bg-teal-50 text-teal-800'
                     : 'text-zinc-600 hover:bg-neutral-100 hover:text-zinc-950'
                 }`}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => navigate(`/classroom/${classItem.id}/${tabItem.id}`)}
               >
                 <Icon size={16} />
-                {tab.label}
+                {tabItem.label}
               </button>
             )
           })}
@@ -90,7 +118,14 @@ export function ClassWorkspace({ classItem, onBack }: ClassWorkspaceProps) {
 
       {activeTab === 'stream' && <StreamTab classItem={classItem} />}
       {activeTab === 'classwork' && <ClassworkTab classItem={classItem} />}
-      {activeTab === 'people' && <PeopleTab classItem={classItem} />}
+      {activeTab === 'people' && (
+        <PeopleTab 
+          classItem={classItem} 
+          students={students} 
+          loading={loadingStudents} 
+          onRefresh={fetchStudents} 
+        />
+      )}
       {activeTab === 'grades' && <GradesTab classItem={classItem} />}
       {activeTab === 'attendance' && <AttendanceTab classItem={classItem} />}
     </div>

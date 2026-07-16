@@ -22,11 +22,16 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // Skip the interceptor for the login endpoint so it can handle 401 locally and show the error
+    const isLoginEndpoint = error.config && error.config.url && error.config.url.includes('/auth/login');
+    
+    if (error.response && error.response.status === 401 && !isLoginEndpoint) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('teacherInfo');
-      // Redirect to login page
-      window.location.href = '/login';
+      // Redirect to login page only if not already on the login endpoint
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
