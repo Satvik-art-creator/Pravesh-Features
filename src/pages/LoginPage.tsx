@@ -1,11 +1,37 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CheckCircle2, Database, ShieldCheck } from 'lucide-react'
 import { InfoPill } from '../components/common/InfoPill'
+import { useAuth } from '../context/AuthContext'
+import { axiosInstance } from '../api/axiosInstance'
 
-type LoginPageProps = {
-  onLogin: () => void
-}
+export function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setError('')
+    setLoading(true)
+    
+    try {
+      const response = await axiosInstance.post('/auth/login', { email, password })
+      if (response.data.success) {
+        login(response.data.data.token, response.data.data.teacher)
+        navigate('/')
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-neutral-100 px-4 py-8">
       <section className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl overflow-hidden rounded-lg border border-neutral-200 bg-white lg:grid-cols-[1fr_440px]">
@@ -42,22 +68,22 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         </div>
 
         <div className="flex items-center p-6 sm:p-10">
-          <form
-            className="w-full"
-            onSubmit={(event) => {
-              event.preventDefault()
-              onLogin()
-            }}
-          >
+          <form className="w-full" onSubmit={handleSubmit}>
             <div className="mb-8">
               <p className="text-sm font-medium text-teal-700">Teacher login</p>
               <h2 className="mt-2 text-3xl font-semibold text-zinc-950">
                 Sign in to dashboard
               </h2>
               <p className="mt-2 text-sm text-zinc-500">
-                Frontend-only demo. Any values will continue to the dashboard.
+                Enter your credentials to access the teacher dashboard.
               </p>
             </div>
+
+            {error && (
+              <div className="mb-6 rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+                {error}
+              </div>
+            )}
 
             <label className="mb-5 block">
               <span className="mb-2 block text-sm font-medium text-zinc-700">
@@ -65,8 +91,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               </span>
               <input
                 className="w-full rounded-md border border-neutral-300 px-4 py-3 outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
-                defaultValue="teacher@iiitn.ac.in"
                 type="email"
+                placeholder="teacher@iiitn.ac.in"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </label>
 
@@ -76,16 +105,20 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               </span>
               <input
                 className="w-full rounded-md border border-neutral-300 px-4 py-3 outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
-                defaultValue="password"
                 type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </label>
 
             <button
-              className="w-full rounded-md bg-teal-600 px-4 py-3 font-semibold text-white hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-100"
+              className="w-full rounded-md bg-teal-600 px-4 py-3 font-semibold text-white hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-100 disabled:opacity-70 disabled:cursor-not-allowed"
               type="submit"
+              disabled={loading}
             >
-              Login
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
         </div>
