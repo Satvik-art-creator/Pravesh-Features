@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { CalendarDays, QrCode, Copy, Check, Loader2, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { DataTable } from '../../common/DataTable'
 import { Step } from '../../common/Step'
 import { axiosInstance } from '../../../api/axiosInstance'
 import type { ClassSummary } from '../../../types'
@@ -151,13 +150,6 @@ export function AttendanceTab({ classItem }: AttendanceTabProps) {
     })
   }
 
-  const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleString('en-IN', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    })
-  }
 
   const isExpired = session && timeRemaining === 0
 

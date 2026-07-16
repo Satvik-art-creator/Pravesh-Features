@@ -7,10 +7,9 @@ type PeopleTabProps = {
   classItem: ClassSummary
   students: any[]
   loading: boolean
-  onRefresh: () => void
 }
 
-export function PeopleTab({ classItem, students, loading, onRefresh }: PeopleTabProps) {
+export function PeopleTab({ classItem, students, loading }: PeopleTabProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [codeCopied, setCodeCopied] = useState(false)
 

@@ -123,7 +123,6 @@ export function ClassWorkspace({ classItem, onBack }: ClassWorkspaceProps) {
           classItem={classItem} 
           students={students} 
           loading={loadingStudents} 
-          onRefresh={fetchStudents} 
         />
       )}
       {activeTab === 'grades' && <GradesTab classItem={classItem} />}
