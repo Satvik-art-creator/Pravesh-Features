@@ -17,9 +17,6 @@ const attendanceSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Index on sessionId for fast lookups (also enforced unique above)
-attendanceSchema.index({ sessionId: 1 });
-
 // Compound index for fetching attendance history by classroom, sorted by date
 attendanceSchema.index({ classroom: 1, date: -1 });
 
