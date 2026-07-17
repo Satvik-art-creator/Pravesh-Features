@@ -91,17 +91,62 @@ export function PeopleTab({ classItem, students, loading }: PeopleTabProps) {
             <DataTable
               title={`${classItem.title} people`}
               columns={['BT ID', 'Name', 'Status', 'Attendance', 'Last Activity']}
-              rows={students.map((student) => [
-                student.btechId,
-                student.name,
-                student.status,
-                student.attendancePercent !== null && student.attendancePercent !== undefined
-                  ? `${student.attendancePercent}%`
-                  : '—',
-                student.lastActivity !== null && student.lastActivity !== undefined
-                  ? student.lastActivity
-                  : '—',
-              ])}
+              rows={students.map((student) => {
+                const isLowAttendance =
+                  student.attendancePercent !== null &&
+                  student.attendancePercent !== undefined &&
+                  student.attendancePercent < 75
+
+                const attendanceCell =
+                  student.attendancePercent !== null &&
+                  student.attendancePercent !== undefined ? (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded px-2.5 py-0.5 text-xs font-semibold border ${
+                        isLowAttendance
+                          ? 'bg-red-50 text-red-700 border-red-150 animate-pulse'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                      }`}
+                    >
+                      {student.attendancePercent}%
+                    </span>
+                  ) : (
+                    <span className="text-zinc-400">—</span>
+                  )
+
+                const lastActivityCell =
+                  student.lastActivity !== null && student.lastActivity !== undefined ? (
+                    <span className="text-xs text-zinc-600">
+                      {new Date(student.lastActivity).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                      {' '}&middot;{' '}
+                      {new Date(student.lastActivity).toLocaleTimeString('en-IN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  ) : (
+                    <span className="text-zinc-400">—</span>
+                  )
+
+                return [
+                  student.btechId,
+                  student.name,
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      student.status === 'Verified'
+                        ? 'bg-teal-50 text-teal-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {student.status}
+                  </span>,
+                  attendanceCell,
+                  lastActivityCell,
+                ]
+              })}
             />
           </>
         )}

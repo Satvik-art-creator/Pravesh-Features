@@ -19,6 +19,9 @@ const app = express();
 // This is critical for the WiFi IP verification in the attendance module.
 app.set('trust proxy', true);
 
+// Serve uploaded files publicly — each file is accessible at /uploads/<storedName>
+app.use('/uploads', express.static('uploads'));
+
 app.use(helmet());
 
 app.use(mongoSanitize());
@@ -44,6 +47,9 @@ app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/classroom', require('./routes/classroom.routes'));
 app.use('/api/join', require('./routes/join.routes'));
 app.use('/api/attendance', require('./routes/attendance.routes'));
+app.use('/api/grades', require('./routes/grades.routes'));
+app.use('/api/classroom', require('./routes/posts.routes'));
+app.use('/api/public', require('./routes/publicPosts.routes'));
 
 app.use(errorHandler);
 

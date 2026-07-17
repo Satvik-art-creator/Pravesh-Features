@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage'
 import { ClassroomDetailPlaceholder } from './pages/ClassroomDetailPlaceholder'
 import { JoinClassPage } from './pages/JoinClassPage'
 import { AttendScanPage } from './pages/AttendScanPage'
+import { StreamPage } from './pages/StreamPage'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { useAuth } from './context/AuthContext'
 import type { View } from './types'
@@ -24,6 +25,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/join/:classCode" element={<JoinClassPage />} />
       <Route path="/attend/:sessionId" element={<AttendScanPage />} />
+      <Route path="/stream/:classCode" element={<StreamPage />} />
       <Route element={<ProtectedRoute />}>
         <Route 
           path="/" 

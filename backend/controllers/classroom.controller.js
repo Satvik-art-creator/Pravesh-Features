@@ -1,5 +1,10 @@
+const fs = require('fs');
 const { validationResult } = require('express-validator');
 const Classroom = require('../models/Classroom');
+const Attendance = require('../models/Attendance');
+const Grade = require('../models/Grade');
+const Post = require('../models/Post');
+const Student = require('../models/Student');
 const generateUniqueClassCode = require('../utils/generateClassCode');
 
 /**
@@ -90,9 +95,12 @@ const getClassroomById = async (req, res, next) => {
 };
 
 /**
- * @desc    Delete a classroom
+ * @desc    Delete a classroom and cascade-delete all related data
  * @route   DELETE /api/classroom/:id
  * @access  Private (Teacher)
+ *
+ * Cleanup order: attendance → grades → posts (with disk files) → student references → classroom.
+ * The classroom document is deleted last so a partial failure doesn't orphan data.
  */
 const deleteClassroom = async (req, res, next) => {
   try {
@@ -106,6 +114,34 @@ const deleteClassroom = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this classroom' });
     }
 
+    const classroomId = classroom._id;
+
+    // 1. Delete all attendance records
+    await Attendance.deleteMany({ classroom: classroomId });
+
+    // 2. Delete all grade documents
+    await Grade.deleteMany({ classroom: classroomId });
+
+    // 3. Delete all posts — remove attached files from disk first
+    const posts = await Post.find({ classroom: classroomId });
+    for (const post of posts) {
+      if (post.attachedFile && post.attachedFile.filePath) {
+        try {
+          fs.unlinkSync(post.attachedFile.filePath);
+        } catch (unlinkErr) {
+          console.warn(`Could not delete file (${post.attachedFile.filePath}):`, unlinkErr.message);
+        }
+      }
+    }
+    await Post.deleteMany({ classroom: classroomId });
+
+    // 4. Remove this classroom from every student's classrooms array
+    await Student.updateMany(
+      { classrooms: classroomId },
+      { $pull: { classrooms: classroomId } }
+    );
+
+    // 5. Delete the classroom document itself (last)
     await classroom.deleteOne();
 
     res.status(200).json({
@@ -118,9 +154,12 @@ const deleteClassroom = async (req, res, next) => {
 };
 
 /**
- * @desc    Get the list of students in a classroom
+ * @desc    Get the list of students in a classroom with real attendance stats
  * @route   GET /api/classroom/:id/students
  * @access  Private (Teacher)
+ *
+ * Computes attendance % and last activity per student in a single pass over
+ * all attendance sessions for this classroom — no per-student queries.
  */
 const getClassroomStudents = async (req, res, next) => {
   try {
@@ -134,13 +173,51 @@ const getClassroomStudents = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to access this classroom' });
     }
 
-    const formattedStudents = classroom.students.map(student => ({
-      btechId: student.btechId,
-      name: student.name,
-      status: "Verified",
-      attendancePercent: null,
-      lastActivity: null
-    }));
+    // Fetch all attendance sessions for this classroom in one query
+    const sessions = await Attendance.find(
+      { classroom: classroom._id },
+      { records: 1 }
+    );
+    const totalSessions = sessions.length;
+
+    // Build a map: btechId → { count, lastTimestamp }
+    const statsMap = new Map();
+    for (const session of sessions) {
+      for (const record of session.records) {
+        const existing = statsMap.get(record.btechId);
+        const ts = record.timestamp ? new Date(record.timestamp) : null;
+        if (!existing) {
+          statsMap.set(record.btechId, { count: 1, lastTimestamp: ts });
+        } else {
+          existing.count += 1;
+          if (ts && (!existing.lastTimestamp || ts > existing.lastTimestamp)) {
+            existing.lastTimestamp = ts;
+          }
+        }
+      }
+    }
+
+    const formattedStudents = classroom.students.map(student => {
+      const stats = statsMap.get(student.btechId);
+      let attendancePercent = null;
+      let lastActivity = null;
+
+      if (totalSessions > 0 && stats) {
+        attendancePercent = Math.round((stats.count / totalSessions) * 100);
+        lastActivity = stats.lastTimestamp ? stats.lastTimestamp.toISOString() : null;
+      } else if (totalSessions > 0) {
+        // Student exists but has zero attendance
+        attendancePercent = 0;
+      }
+
+      return {
+        btechId: student.btechId,
+        name: student.name,
+        status: "Verified",
+        attendancePercent,
+        lastActivity
+      };
+    });
 
     res.status(200).json({
       success: true,

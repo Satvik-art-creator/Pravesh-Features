@@ -1,7 +1,9 @@
+import React from 'react'
+
 type DataTableProps = {
   title: string
   columns: string[]
-  rows: (string | number)[][]
+  rows: React.ReactNode[][]
 }
 
 export function DataTable({ title, columns, rows }: DataTableProps) {
@@ -22,13 +24,13 @@ export function DataTable({ title, columns, rows }: DataTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-200">
-            {rows.map((row) => (
-              <tr key={row.join('-')}>
-                {row.map((cell, index) => (
+            {rows.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, colIndex) => (
                   <td
-                    key={`${cell}-${index}`}
+                    key={colIndex}
                     className={`px-4 py-3 ${
-                      index === 0 ? 'font-medium text-zinc-950' : 'text-zinc-600'
+                      colIndex === 0 ? 'font-medium text-zinc-950' : 'text-zinc-600'
                     }`}
                   >
                     {cell}

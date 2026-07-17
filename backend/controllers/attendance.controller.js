@@ -103,13 +103,19 @@ const validateSession = async (req, res, next) => {
 const submitAttendance = async (req, res, next) => {
   try {
     // 1. Validate btechId is present
-    const { btechId } = req.body;
+    const { btechId, deviceId } = req.body;
     if (!btechId || typeof btechId !== 'string' || !btechId.trim()) {
       return res.status(400).json({ success: false, message: 'BT ID is required' });
     }
 
+    // 1b. Validate deviceId is present
+    if (!deviceId || typeof deviceId !== 'string' || !deviceId.trim()) {
+      return res.status(400).json({ success: false, message: 'Device ID is required' });
+    }
+
     // 2. Normalize btechId
     const normalizedBtechId = btechId.trim().toUpperCase();
+    const normalizedDeviceId = deviceId.trim();
 
     // 3. Fetch attendance session and check validity
     const attendance = await Attendance.findOne({ sessionId: req.params.sessionId });
@@ -154,6 +160,22 @@ const submitAttendance = async (req, res, next) => {
       });
     }
 
+    // 5b. Device-conflict check: has this device already been used for a DIFFERENT BT ID?
+    // Note: this check has a small race-condition window for near-simultaneous requests
+    // from the same device with different BT IDs, which is an accepted tradeoff — it's
+    // a deterrent against casual proxy attendance, not a cryptographic guarantee.
+    const existingFromDevice = await Attendance.findOne({
+      sessionId: req.params.sessionId,
+      'records.deviceId': normalizedDeviceId,
+      'records.btechId': { $ne: normalizedBtechId }
+    });
+    if (existingFromDevice) {
+      return res.status(403).json({
+        success: false,
+        message: 'This device has already been used to mark attendance for a different student in this session.'
+      });
+    }
+
     // 6. Atomically record attendance — the $ne condition ensures no duplicate records
     // even under heavy concurrent load. If another request for the same btechId races
     // this one, only one will succeed in matching the $ne filter; the other gets null.
@@ -166,7 +188,8 @@ const submitAttendance = async (req, res, next) => {
             btechId: normalizedBtechId,
             timestamp: new Date(),
             ipAddress: clientIp,
-            wifiVerified: wifiOk
+            wifiVerified: wifiOk,
+            deviceId: normalizedDeviceId
           }
         }
       },
