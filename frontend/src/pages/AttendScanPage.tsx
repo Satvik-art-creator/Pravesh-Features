@@ -21,6 +21,18 @@ export function AttendScanPage() {
   const [submitLoading, setSubmitLoading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [deviceBlocked, setDeviceBlocked] = useState(false)
+
+  // Get or generate a persistent device ID for this browser.
+  // Stored in localStorage so it survives page reloads within the same session.
+  const getOrCreateDeviceId = (): string => {
+    let id = localStorage.getItem('deviceId')
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem('deviceId', id)
+    }
+    return id
+  }
 
   useEffect(() => {
     const validateSession = async () => {
@@ -63,14 +75,19 @@ export function AttendScanPage() {
 
     try {
       const response = await axiosInstance.post(`/attendance/scan/${sessionId}`, {
-        btechId: btechId.trim()
+        btechId: btechId.trim(),
+        deviceId: getOrCreateDeviceId()
       })
 
       if (response.data.success) {
         setSuccessMessage(response.data.message)
       }
     } catch (err: any) {
-      setSubmitError(err.response?.data?.message || 'Failed to mark attendance. Please try again.')
+      if (err.response?.status === 403 && err.response?.data?.message?.includes('device')) {
+        setDeviceBlocked(true)
+      } else {
+        setSubmitError(err.response?.data?.message || 'Failed to mark attendance. Please try again.')
+      }
     } finally {
       setSubmitLoading(false)
     }
@@ -119,6 +136,26 @@ export function AttendScanPage() {
           </p>
           <p className="mt-1 text-xs text-zinc-400">
             Please scan a valid QR code from your teacher.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Device blocked state — this device already marked attendance for a different student
+  if (deviceBlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
+        <div className="w-full max-w-md rounded-lg border border-red-200 bg-white p-8 shadow-md text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
+            <AlertTriangle className="h-10 w-10" />
+          </div>
+          <h2 className="mt-6 text-2xl font-bold text-zinc-950">Device Already Used</h2>
+          <p className="mt-4 text-zinc-600">
+            This device has already been used to mark attendance for another student in this session.
+          </p>
+          <p className="mt-3 text-sm text-zinc-500">
+            Each student must scan and sign in from their own device.
           </p>
         </div>
       </div>

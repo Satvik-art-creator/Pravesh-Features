@@ -11,7 +11,8 @@ const attendanceSchema = new mongoose.Schema({
       btechId: { type: String, required: true },
       timestamp: { type: Date, default: Date.now },
       ipAddress: String,
-      wifiVerified: { type: Boolean, default: false }
+      wifiVerified: { type: Boolean, default: false },
+      deviceId: { type: String, required: true }
     }
   ],
   createdAt: { type: Date, default: Date.now }
